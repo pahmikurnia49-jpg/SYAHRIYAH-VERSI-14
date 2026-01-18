@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Keuangan PP. At-Taufiiqiyyah</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f0fdf4; }
+        .sidebar-active { background-color: #047857; color: white; border-right: 4px solid #34d399; }
+        .hidden-section { display: none !important; } 
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="login-page" class="fixed inset-0 bg-green-900 z-50 flex items-center justify-center fade-in">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-96 border-t-4 border-green-500">
+            <div class="text-center mb-6">
+                <img id="login-logo" src="./logo.png" onerror="this.src='https://via.placeholder.com/100?text=LOGO'" alt="Logo" class="w-24 h-24 mx-auto mb-3 object-contain shadow-md rounded-full bg-white">
+                <h1 class="text-xl font-bold text-gray-800 uppercase tracking-wide">PP. AT-TAUFIIQIYYAH</h1>
+                <p class="text-sm text-gray-500">Administrasi Keuangan Syahriah</p>
+            </div>
+            <form onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Username</label>
+                    <input type="text" id="username" class="w-full mt-1 p-2 border rounded focus:ring-green-500 outline-none" required>
+                </div>
+                <div class="mb-2 relative">
+                    <label class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" class="w-full mt-1 p-2 border rounded focus:ring-green-500 outline-none pr-10" required>
+                    <button type="button" onclick="togglePassword()" class="absolute right-3 top-8 text-gray-400 hover:text-green-600">
+                        <i id="eye-icon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="text-right mb-6">
+                    <a href="#" onclick="handleForgotPassword()" class="text-xs text-green-600 hover:underline">Lupa Password?</a>
+                </div>
+                <button type="submit" class="w-full bg-green-700 text-white py-2 rounded hover:bg-green-800 transition shadow-lg">MASUK</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="app" class="hidden flex h-screen overflow-hidden">
+        
+        <aside class="w-64 bg-white shadow-xl z-20 hidden md:flex flex-col justify-between">
+            <div>
+                <div class="p-6 border-b flex flex-col items-center justify-center text-center">
+                    <img id="sidebar-logo" src="./logo.png" onerror="this.src='https://via.placeholder.com/100?text=LOGO'" class="w-16 h-16 object-contain mb-2 bg-white rounded-full shadow-sm">
+                    <span class="font-bold text-green-900 text-sm">SI-KEUANGAN SANTRI</span>
+                </div>
+                <nav class="mt-4 space-y-1 px-2">
+                    <button onclick="nav('dashboard')" id="btn-dashboard" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-green-50 text-gray-600 font-medium transition"><i class="fas fa-home w-8 text-center"></i> Dashboard</button>
+                    <button onclick="nav('santri')" id="btn-santri" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-green-50 text-gray-600 font-medium transition"><i class="fas fa-users w-8 text-center"></i> Data Santri</button>
+                    <button onclick="nav('pembayaran')" id="btn-pembayaran" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-green-50 text-gray-600 font-medium transition"><i class="fas fa-money-bill-wave w-8 text-center"></i> Pembayaran</button>
+                    <button onclick="nav('riwayat')" id="btn-riwayat" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-green-50 text-gray-600 font-medium transition"><i class="fas fa-history w-8 text-center"></i> Riwayat</button>
+                    <button onclick="nav('laporan')" id="btn-laporan" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-green-50 text-gray-600 font-medium transition"><i class="fas fa-file-invoice w-8 text-center"></i> Laporan</button>
+                    <button onclick="nav('pengaturan')" id="btn-pengaturan" class="nav-item w-full text-left px-4 py-3 rounded hover:bg-green-50 text-gray-600 font-medium transition"><i class="fas fa-cogs w-8 text-center"></i> Pengaturan</button>
+                </nav>
+            </div>
+            <div class="p-4 border-t bg-gray-50">
+                <button onclick="logout()" class="w-full text-red-600 py-2 rounded hover:bg-red-100 font-semibold"><i class="fas fa-sign-out-alt"></i> Keluar</button>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 relative bg-gray-50">
+            
+            <div class="md:hidden flex justify-between items-center mb-6 bg-white p-4 rounded shadow">
+                <div class="flex items-center gap-2">
+                    <img id="mobile-logo" src="./logo.png" onerror="this.src='https://via.placeholder.com/100?text=LOGO'" class="w-8 h-8 rounded-full bg-white">
+                    <span class="font-bold text-green-800">AT-TAUFIIQIYYAH</span>
+                </div>
+                <button onclick="toggleSidebar()" class="text-green-700"><i class="fas fa-bars fa-lg"></i></button>
+            </div>
+
+            <section id="page-dashboard" class="fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
+                    <div class="text-right bg-white px-3 py-1 rounded shadow-sm border-l-4 border-green-500">
+                        <span id="date" class="text-xs text-gray-500 font-semibold block">...</span>
+                        <span id="clock" class="text-lg font-mono font-bold text-green-700">00:00:00</span>
+                    </div>
+                </div>
+
+                <div id="alert-deadline" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-2 mb-4 rounded shadow text-sm">
+                    <span class="font-bold">⚠️ Perhatian!</span> Hari ini tenggat waktu pembayaran.
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+                    <div class="bg-white p-4 rounded-lg shadow border-t-4 border-green-500">
+                        <p class="text-[10px] text-gray-500 uppercase font-bold" id="label-masuk">Pemasukan Bulan Ini</p>
+                        <div class="flex justify-between items-center">
+                            <p class="text-lg font-bold text-green-600" id="dash-masuk">Rp 0</p>
+                            <i class="fas fa-wallet text-green-200 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow border-t-4 border-red-500">
+                         <p class="text-[10px] text-gray-500 uppercase font-bold" id="label-target">Target Bulan Ini</p>
+                         <div class="flex justify-between items-center">
+                            <p class="text-lg font-bold text-red-600" id="dash-kurang">Rp 0</p>
+                            <i class="fas fa-times-circle text-red-200 text-xl"></i>
+                         </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow border-t-4 border-blue-500">
+                         <p class="text-[10px] text-gray-500 uppercase font-bold">Santri Aktif</p>
+                         <div class="flex justify-between items-center">
+                            <p class="text-lg font-bold text-blue-600"><span id="dash-santri-count">0</span> Orang</p>
+                            <i class="fas fa-users text-blue-200 text-xl"></i>
+                         </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow border-t-4 border-orange-500">
+                         <p class="text-[10px] text-gray-500 uppercase font-bold">Tenggat Waktu</p>
+                         <div class="flex justify-between items-center">
+                            <p class="text-lg font-bold text-orange-600" id="dash-countdown">0 Hari</p>
+                            <i class="fas fa-hourglass-half text-orange-200 text-xl"></i>
+                         </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[400px]">
+                    <div class="bg-white p-4 rounded-lg shadow lg:col-span-2 flex flex-col">
+                        <h3 class="font-bold text-gray-700 text-sm mb-2">Grafik Pemasukan Tahun Ini</h3>
+                        <div class="flex-1 relative">
+                            <canvas id="chartPembayaran"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow flex flex-col">
+                        <h3 class="font-bold text-gray-700 text-sm mb-2 border-b pb-2">Aktivitas Terakhir</h3>
+                        <div class="overflow-y-auto flex-1 text-sm" id="activity-log">
+                            <p class="text-center text-gray-400 py-4">Belum ada aktivitas</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="page-santri" class="hidden-section fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-bold text-gray-800">Data Santri</h2>
+                    <div class="flex gap-2">
+                        <button onclick="document.getElementById('excel-input').click()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow text-sm flex items-center gap-2"><i class="fas fa-file-excel"></i> Import Excel</button>
+                        <input type="file" id="excel-input" hidden accept=".xlsx, .xls" onchange="handleExcelUpload(this)">
+                        <button onclick="openModalSantri()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow text-sm flex items-center gap-2"><i class="fas fa-plus"></i> Tambah</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 border-b mb-4">
+                    <button onclick="switchSantriTab('aktif')" id="tab-aktif" class="px-4 py-2 border-b-2 border-green-600 font-bold text-green-800">Santri Aktif</button>
+                    <button onclick="switchSantriTab('alumni')" id="tab-alumni" class="px-4 py-2 text-gray-500 hover:text-green-600">Arsip Alumni</button>
+                </div>
+
+                <div class="bg-white rounded-lg shadow overflow-x-auto">
+                    <div class="p-4 border-b bg-gray-50 flex justify-between">
+                        <input type="text" id="search-santri" onkeyup="renderSantriTable()" placeholder="Cari nama santri..." class="border rounded px-3 py-1 text-sm w-64">
+                        <span class="text-xs text-gray-500 self-center" id="santri-total-label">Total: 0</span>
+                    </div>
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+                            <tr>
+                                <th class="px-4 py-3">No</th>
+                                <th class="px-4 py-3">Nama Lengkap</th>
+                                <th class="px-4 py-3">JK</th>
+                                <th class="px-4 py-3">Info</th>
+                                <th class="px-4 py-3 text-center" id="th-status">Status</th>
+                                <th class="px-4 py-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="santri-table-body" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="page-pembayaran" class="hidden-section fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Pembayaran Syahriah</h2>
+                        <p class="text-sm text-gray-500">Kelola pembayaran bulanan santri</p>
+                    </div>
+                    <div class="flex gap-2 bg-white p-2 rounded shadow">
+                        <select id="pay-filter-month" onchange="renderPaymentTable()" class="border-none focus:ring-0 text-sm font-bold text-gray-700 bg-transparent cursor-pointer outline-none"></select>
+                        <select id="pay-filter-year" onchange="renderPaymentTable()" class="border-none focus:ring-0 text-sm font-bold text-gray-700 bg-transparent cursor-pointer outline-none"></select>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow overflow-x-auto">
+                    <div class="p-4 border-b bg-gray-50">
+                        <input type="text" id="search-payment" onkeyup="renderPaymentTable()" placeholder="Cari santri..." class="border rounded px-3 py-1 text-sm w-64">
+                    </div>
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+                            <tr>
+                                <th class="px-4 py-3">No</th>
+                                <th class="px-4 py-3">Nama Santri</th>
+                                <th class="px-4 py-3">Bulan Lalu</th>
+                                <th class="px-4 py-3">Bulan Ini</th>
+                                <th class="px-4 py-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payment-table-body" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="page-riwayat" class="hidden-section fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Riwayat Transaksi</h2>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow mb-4 flex flex-wrap gap-3 items-end">
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">Tahun</label>
+                        <select id="hist-year" onchange="renderHistory()" class="border rounded px-2 py-1 text-sm bg-gray-50"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">Bulan</label>
+                        <select id="hist-month" onchange="renderHistory()" class="border rounded px-2 py-1 text-sm bg-gray-50">
+                            <option value="">Semua</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-1">Tanggal Spesifik</label>
+                        <input type="date" id="hist-date" onchange="renderHistory()" class="border rounded px-2 py-1 text-sm bg-gray-50">
+                    </div>
+                    <div>
+                        <button onclick="resetHistoryFilter()" class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300">Reset</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-800 text-white uppercase text-xs">
+                            <tr>
+                                <th class="px-4 py-3">Tanggal</th>
+                                <th class="px-4 py-3">Santri</th>
+                                <th class="px-4 py-3">Nominal</th>
+                                <th class="px-4 py-3">Ket.</th>
+                                <th class="px-4 py-3">Via</th>
+                                <th class="px-4 py-3">Nota</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="page-laporan" class="hidden-section fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
+                    <h2 class="text-2xl font-bold text-gray-800">Laporan Keuangan</h2>
+                    <div class="bg-white p-3 rounded shadow flex flex-col gap-2">
+                        <div class="flex gap-2 mb-2">
+                            <select id="report-month" class="border rounded px-2 py-1 text-sm bg-gray-50"></select>
+                            <select id="report-year" class="border rounded px-2 py-1 text-sm bg-gray-50"></select>
+                        </div>
+                        <div class="flex gap-2 flex-wrap justify-end">
+                            <button onclick="downloadMonthlyReport()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs flex items-center gap-1"><i class="fas fa-file-pdf"></i> Download Rekap Bulanan</button>
+                            <button onclick="downloadYearlyReport()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-xs flex items-center gap-1"><i class="fas fa-file-pdf"></i> Download Rekap Tahunan</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded shadow overflow-x-auto">
+                    <h3 class="font-bold mb-4 text-center uppercase border-b pb-2">Preview Matrix Pembayaran <span id="matrix-year-label"></span></h3>
+                    <div class="flex gap-4 mb-4 text-xs justify-center">
+                        <span class="flex items-center gap-1"><div class="w-3 h-3 bg-red-200 border border-red-500"></div> Belum</span>
+                        <span class="flex items-center gap-1"><div class="w-3 h-3 bg-yellow-200 border border-yellow-500"></div> Cicil</span>
+                        <span class="flex items-center gap-1"><div class="w-3 h-3 bg-green-200 border border-green-500"></div> Lunas</span>
+                    </div>
+                    <table class="w-full text-xs text-center border-collapse border" id="matrix-table">
+                        <thead class="bg-gray-100 font-bold">
+                            <tr>
+                                <th class="border p-2 text-left min-w-[150px]">Nama Santri</th>
+                                <th class="border p-1">Jan</th><th class="border p-1">Feb</th><th class="border p-1">Mar</th>
+                                <th class="border p-1">Apr</th><th class="border p-1">Mei</th><th class="border p-1">Jun</th>
+                                <th class="border p-1">Jul</th><th class="border p-1">Agu</th><th class="border p-1">Sep</th>
+                                <th class="border p-1">Okt</th><th class="border p-1">Nov</th><th class="border p-1">Des</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrix-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="page-pengaturan" class="hidden-section fade-in">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Pengaturan Sistem</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow border-t-4 border-green-600">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fas fa-money-bill"></i> Umum & Keuangan</h3>
+                        <div class="mb-3">
+                            <label class="block text-sm text-gray-600">Nominal Syahriah (Rp)</label>
+                            <input type="number" id="set-nominal" class="w-full border p-2 rounded">
+                        </div>
+                        <div class="mb-3">
+                            <label class="block text-sm text-gray-600">Tanggal Tenggat (1-31)</label>
+                            <input type="number" id="set-deadline" class="w-full border p-2 rounded">
+                        </div>
+                         <div class="mb-3">
+                            <label class="block text-sm text-gray-600">Path Logo</label>
+                            <input type="text" id="set-logo" class="w-full border p-2 rounded">
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div class="bg-white p-6 rounded-lg shadow border-t-4 border-purple-600">
+                            <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fas fa-user-lock"></i> Akun Admin</h3>
+                            <div class="grid grid-cols-2 gap-2 mb-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500">Username Baru</label>
+                                    <input type="text" id="set-user" class="w-full border p-2 rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500">Password Baru</label>
+                                    <input type="text" id="set-pass" class="w-full border p-2 rounded text-sm">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="block text-xs font-bold text-gray-500">Kode Reset (Untuk Lupa Password)</label>
+                                <input type="text" id="set-resetcode" class="w-full border p-2 rounded text-sm" placeholder="Contoh: 123456">
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-lg shadow border-t-4 border-blue-600">
+                            <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i class="fas fa-database"></i> Backup & Restore</h3>
+                            <div class="flex gap-2">
+                                <button onclick="backupData()" class="flex-1 bg-green-500 text-white py-2 rounded font-bold shadow text-sm">Download</button>
+                                <button onclick="document.getElementById('restore-file').click()" class="flex-1 bg-yellow-500 text-white py-2 rounded font-bold shadow text-sm text-gray-900">Upload</button>
+                                <input type="file" id="restore-file" hidden accept=".json" onchange="restoreData(this)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <button onclick="saveConfig()" class="w-full bg-green-800 text-white py-3 rounded-lg font-bold hover:bg-green-900 shadow-lg">SIMPAN SEMUA PERUBAHAN</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="modal-santri" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center fade-in">
+        <div class="bg-white p-6 rounded shadow-lg w-96">
+            <h3 class="font-bold text-lg mb-4 border-b pb-2" id="modal-santri-title">Tambah Santri</h3>
+            <form onsubmit="saveSantri(event)">
+                <input type="hidden" id="santri-id">
+                <div class="mb-2">
+                    <label class="text-xs font-bold text-gray-600">Nama Lengkap</label>
+                    <input type="text" id="santri-nama" class="w-full border p-2 rounded" required>
+                </div>
+                <div class="mb-2">
+                    <label class="text-xs font-bold text-gray-600">Jenis Kelamin</label>
+                    <select id="santri-jk" class="w-full border p-2 rounded">
+                        <option value="L">Laki-laki</option>
+                        <option value="P">Perempuan</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="text-xs font-bold text-gray-600">Tahun Masuk</label>
+                    <input type="number" id="santri-tahun" class="w-full border p-2 rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label class="text-xs font-bold text-gray-600">Status Pembayaran</label>
+                    <select id="santri-status-bayar" class="w-full border p-2 rounded">
+                        <option value="Wajib">Wajib Bayar</option>
+                        <option value="Bebas">Bebas Biaya</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeModalSantri()" class="text-gray-500 px-4 py-2">Batal</button>
+                    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-bayar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center fade-in">
+        <div class="bg-white p-6 rounded shadow-lg w-96 relative">
+            <button onclick="closeModalBayar()" class="absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+            <h3 class="font-bold text-lg mb-1">Input Pembayaran</h3>
+            <p class="text-sm text-green-700 font-bold mb-4 bg-green-50 p-2 rounded" id="bayar-santri-nama">-</p>
+            <form onsubmit="processPayment(event)">
+                <input type="hidden" id="bayar-santri-id">
+                <input type="hidden" id="bayar-bulan-target"> 
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500">Tanggal</label>
+                        <input type="date" id="bayar-tanggal" class="w-full border p-1 rounded text-sm" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500">Via</label>
+                        <select id="bayar-via" class="w-full border p-1 rounded text-sm">
+                            <option value="Tunai">Tunai</option>
+                            <option value="Transfer">Transfer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-2">
+                     <label class="text-xs font-bold text-gray-500">Jenis Pembayaran</label>
+                     <select id="bayar-tipe" class="w-full border p-2 rounded text-sm bg-gray-50" onchange="autoFillNominal()">
+                         <option value="bulanan">Syahriah Bulan Ini</option>
+                         <option value="tunggakan">Bayar Tunggakan/Hutang</option>
+                     </select>
+                </div>
+                <div class="mb-4">
+                    <label class="text-xs font-bold text-gray-500">Nominal (Rp)</label>
+                    <input type="number" id="bayar-nominal" class="w-full border p-2 rounded text-lg font-bold text-gray-800" required>
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold shadow">PROSES BAYAR</button>
+            </form>
+        </div>
+    </div>
+
+    <div style="position:fixed; left:-9999px;">
+        <div id="nota-print" class="bg-white p-6 border font-mono text-gray-800" style="width: 400px;">
+            <div class="text-center border-b-2 border-dashed border-gray-400 pb-4 mb-4">
+                <h2 class="font-bold text-xl">PP. AT-TAUFIIQIYYAH</h2>
+                <p class="text-xs">Kwitansi Pembayaran</p>
+            </div>
+            <table class="w-full text-sm mb-4">
+                <tr><td>Tgl</td><td class="text-right" id="nota-tgl"></td></tr>
+                <tr><td>No.Ref</td><td class="text-right" id="nota-id"></td></tr>
+                <tr><td>Santri</td><td class="text-right font-bold" id="nota-nama"></td></tr>
+            </table>
+            <div class="border-t border-b border-gray-300 py-2 mb-4">
+                <div class="flex justify-between font-bold text-lg">
+                    <span>TOTAL</span>
+                    <span id="nota-nominal"></span>
+                </div>
+                <div class="text-xs text-gray-500 mt-1" id="nota-desc"></div>
+            </div>
+            <div class="text-center text-xs text-gray-400">
+                <p>Terima Kasih</p>
+                <p id="nota-admin" class="mt-2"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_CONFIG = { nominal: 100000, deadline: 10, logo: "./logo.png" };
+        const MONTH_NAMES = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+        let db = { santri: [], transaksi: [], payments: {}, config: {...DEFAULT_CONFIG}, auth: { user: "admin", pass: "admin", resetCode: "123456" } };
+
+        document.addEventListener('DOMContentLoaded', () => { loadData(); checkLogin(); });
+
+        function loadData() {
+            const saved = localStorage.getItem('pp_keuangan_db');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                db = { ...db, ...parsed };
+                if(!db.auth.resetCode) db.auth.resetCode = "123456";
+            }
+            applyConfig();
+        }
+        function saveData() { localStorage.setItem('pp_keuangan_db', JSON.stringify(db)); }
+        function applyConfig() {
+            document.querySelectorAll('#login-logo, #sidebar-logo, #mobile-logo').forEach(img => img.src = db.config.logo);
+            document.getElementById('set-nominal').value = db.config.nominal;
+            document.getElementById('set-deadline').value = db.config.deadline;
+            document.getElementById('set-logo').value = db.config.logo;
+            document.getElementById('set-user').value = db.auth.user;
+            document.getElementById('set-pass').value = db.auth.pass;
+            document.getElementById('set-resetcode').value = db.auth.resetCode;
+        }
+        function formatRupiah(n) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits:0 }).format(n); }
+
+        function checkLogin() {
+            if(sessionStorage.getItem('isLoggedIn')) {
+                document.getElementById('login-page').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                initApp();
+            }
+        }
+        function handleLogin(e) {
+            e.preventDefault();
+            if(document.getElementById('username').value === db.auth.user && document.getElementById('password').value === db.auth.pass) {
+                sessionStorage.setItem('isLoggedIn', 'true'); checkLogin();
+            } else Swal.fire('Gagal', 'Login salah', 'error');
+        }
+        async function handleForgotPassword() {
+            const { value: code } = await Swal.fire({ title: 'Reset Password', input: 'text', inputLabel: 'Masukkan Kode Reset (Default: 123456)', showCancelButton: true });
+            if (code) {
+                if (code === db.auth.resetCode) {
+                    const { value: fv } = await Swal.fire({ title: 'Buat Akun Baru', html: '<input id="swal-input1" class="swal2-input" placeholder="Username Baru"><input id="swal-input2" class="swal2-input" placeholder="Password Baru">', focusConfirm: false, preConfirm: () => [document.getElementById('swal-input1').value, document.getElementById('swal-input2').value] });
+                    if (fv && fv[0] && fv[1]) { db.auth.user = fv[0]; db.auth.pass = fv[1]; saveData(); Swal.fire('Sukses', 'Silakan login.', 'success'); }
+                } else Swal.fire('Gagal', 'Kode Reset Salah!', 'error');
+            }
+        }
+        function togglePassword() { const p = document.getElementById('password'); p.type = p.type === 'password' ? 'text' : 'password'; }
+        function logout() { sessionStorage.clear(); location.reload(); }
+        function nav(pageId) {
+            document.querySelectorAll('section').forEach(el => el.classList.add('hidden-section'));
+            document.getElementById('page-' + pageId).classList.remove('hidden-section');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('sidebar-active'));
+            const btn = document.getElementById('btn-' + pageId); if(btn) btn.classList.add('sidebar-active');
+            if(pageId === 'laporan') populateReportFilter();
+            if(pageId === 'riwayat') populateHistoryFilters();
+        }
+        function initApp() {
+            setInterval(() => { const now = new Date(); document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID'); document.getElementById('date').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }, 1000);
+            loadDashboard(); populateMonthYearFilter(); nav('dashboard');
+        }
+
+        // --- DASHBOARD ---
+        function loadDashboard() {
+            const today = new Date();
+            const currentMonthName = MONTH_NAMES[today.getMonth()];
+            const year = today.getFullYear();
+            const currentMonthKey = `${year}-${String(today.getMonth()+1).padStart(2,'0')}`;
+            document.getElementById('label-masuk').innerText = `PEMASUKAN ${currentMonthName.toUpperCase()} ${year}`;
+            document.getElementById('label-target').innerText = `TARGET (KEKURANGAN) ${currentMonthName.toUpperCase()} ${year}`;
+            const activeSantri = db.santri.filter(s => s.status === 'aktif' && s.type === 'Wajib');
+            const totalActive = db.santri.filter(s => s.status === 'aktif').length;
+            let totalMasukCashflow = 0;
+            db.transaksi.filter(t => t.date.startsWith(currentMonthKey)).forEach(t => totalMasukCashflow += parseInt(t.amount));
+            let syahriahPaidThisMonth = 0;
+            activeSantri.forEach(s => { const payKey = `${s.id}_${currentMonthKey}`; if(db.payments[payKey]) syahriahPaidThisMonth += db.payments[payKey].paid; });
+            const target = activeSantri.length * parseInt(db.config.nominal);
+            const kurang = target - syahriahPaidThisMonth;
+            document.getElementById('dash-masuk').innerText = formatRupiah(totalMasukCashflow);
+            document.getElementById('dash-kurang').innerText = formatRupiah(kurang > 0 ? kurang : 0);
+            document.getElementById('dash-santri-count').innerText = totalActive;
+            const deadline = new Date(year, today.getMonth(), parseInt(db.config.deadline));
+            const diff = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+            const cEl = document.getElementById('dash-countdown');
+            if(diff < 0) { cEl.innerText = "Lewat " + Math.abs(diff) + " Hari"; cEl.className = "text-lg font-bold text-red-600"; document.getElementById('alert-deadline').classList.remove('hidden'); }
+            else { cEl.innerText = diff + " Hari Lagi"; cEl.className = "text-lg font-bold text-orange-600"; }
+            renderChart();
+        }
+        let chartInstance = null;
+        function renderChart() {
+            const ctx = document.getElementById('chartPembayaran').getContext('2d');
+            const year = new Date().getFullYear();
+            const data = Array(12).fill(0);
+            db.transaksi.forEach(t => { if(t.date.startsWith(year)) data[parseInt(t.date.split('-')[1])-1] += parseInt(t.amount); });
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, { type: 'bar', data: { labels: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'], datasets: [{ label: 'Rp', data: data, backgroundColor: '#16a34a' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            const logHTML = db.transaksi.slice().reverse().slice(0, 8).map(t => { const s = db.santri.find(x => x.id == t.santriId); return `<div class="flex justify-between text-xs border-b pb-1 mb-1"><div><b>${s ? s.name : 'Unknown'}</b><br><span class="text-gray-500">${t.desc}</span></div><div class="text-right text-green-600 font-bold">+${formatRupiah(t.amount)}<br><span class="text-[10px] text-gray-400">${t.date}</span></div></div>`; }).join('');
+            document.getElementById('activity-log').innerHTML = logHTML || '<p class="text-center text-gray-400 py-4">Kosong</p>';
+        }
+
+        // --- SANTRI & LOGIKA ALUMNI BARU ---
+        let santriTab = 'aktif';
+        function switchSantriTab(tab) {
+            santriTab = tab;
+            document.getElementById('tab-aktif').className = tab === 'aktif' ? "px-4 py-2 border-b-2 border-green-600 font-bold text-green-800" : "px-4 py-2 text-gray-500";
+            document.getElementById('tab-alumni').className = tab === 'alumni' ? "px-4 py-2 border-b-2 border-green-600 font-bold text-green-800" : "px-4 py-2 text-gray-500";
+            document.getElementById('th-status').innerText = tab === 'aktif' ? "Status" : "Tunggakan";
+            renderSantriTable();
+        }
+
+        function renderSantriTable() {
+            const tbody = document.getElementById('santri-table-body');
+            const search = document.getElementById('search-santri').value.toLowerCase();
+            const filtered = db.santri.filter(s => s.status === santriTab && s.name.toLowerCase().includes(search));
+            document.getElementById('santri-total-label').innerText = `Total: ${filtered.length}`;
+            
+            tbody.innerHTML = filtered.map((s, i) => {
+                let statusInfo = '';
+                let actionBtns = '';
+
+                if (santriTab === 'aktif') {
+                    statusInfo = `<span class="px-2 py-1 rounded text-xs ${s.type === 'Wajib' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'}">${s.type}</span>`;
+                    actionBtns = `
+                        <button onclick="editSantri('${s.id}')" class="text-blue-600 hover:text-blue-800 mr-2" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button onclick="moveToAlumni('${s.id}')" class="text-orange-600 hover:text-orange-800 mr-2" title="Arsipkan"><i class="fas fa-user-graduate"></i></button>
+                        <button onclick="downloadKartuSPP('${s.id}')" class="text-purple-600 hover:text-purple-800" title="Kartu SPP"><i class="fas fa-id-card"></i></button>
+                    `;
+                } else {
+                    // TAB ALUMNI: Logic Tunggakan
+                    if (s.debt > 0) {
+                        statusInfo = `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">${formatRupiah(s.debt)}</span>`;
+                    } else {
+                        statusInfo = `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">LUNAS</span>`;
+                    }
+                    // REVISI: Tombol Edit & Bayar saja. Hapus dibuang.
+                    actionBtns = `
+                        <button onclick="editSantri('${s.id}')" class="text-blue-600 hover:text-blue-800 mr-3" title="Edit Data"><i class="fas fa-edit"></i></button>
+                        <button onclick="openModalBayar('${s.id}', '${s.name}', 'HUTANG')" class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 shadow flex items-center gap-1"><i class="fas fa-wallet"></i> Bayar</button>
+                    `;
+                }
+
+                return `<tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3">${i + 1}</td>
+                    <td class="px-4 py-3 font-medium">${s.name}</td>
+                    <td class="px-4 py-3">${s.jk}</td>
+                    <td class="px-4 py-3 text-xs">Angkatan ${s.year}</td>
+                    <td class="px-4 py-3 text-center">${statusInfo}</td>
+                    <td class="px-4 py-3 text-center flex justify-center items-center gap-2">${actionBtns}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // --- HITUNG HUTANG SAAT PINDAH ALUMNI ---
+        function calculateDebtDetails(santri) {
+            if(santri.type === 'Bebas') return { total: 0, details: [] };
+            
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth() + 1;
+            
+            // REVISI: Start Point dipaksa 2025.
+            // Namun, jika santri masuk SETELAH 2025 (misal 2026), maka mulai dari tahun masuknya.
+            let startYear = 2025;
+            if (parseInt(santri.year) > 2025) {
+                startYear = parseInt(santri.year);
+            }
+
+            let totalDebt = 0;
+            let details = [];
+
+            // Loop dari startYear (Min 2025) sampai sekarang
+            for (let y = startYear; y <= currentYear; y++) {
+                let startM = 1;
+                let endM = 12;
+                if (y === currentYear) endM = currentMonth;
+                
+                for (let m = startM; m <= endM; m++) {
+                    const key = `${santri.id}_${y}-${String(m).padStart(2,'0')}`;
+                    const payment = db.payments[key];
+                    const nominal = parseInt(db.config.nominal);
+                    
+                    let paid = payment ? payment.paid : 0;
+                    if (paid < nominal) {
+                        const debt = nominal - paid;
+                        totalDebt += debt;
+                        details.push(`${MONTH_NAMES[m-1]} ${y} (Kurang ${formatRupiah(debt)})`);
+                    }
+                }
+            }
+            return { total: totalDebt, details: details };
+        }
+
+        function moveToAlumni(id) {
+            const idx = db.santri.findIndex(x => x.id == id);
+            const s = db.santri[idx];
+            
+            // Hitung hutang saat ini juga
+            const debtInfo = calculateDebtDetails(s);
+            
+            let message = "Santri akan dipindahkan ke arsip alumni.";
+            let icon = "info";
+            
+            if (debtInfo.total > 0) {
+                message = `<div class="text-left text-sm">
+                    <p class="mb-2 font-bold text-red-600">Santri ini memiliki tunggakan (Dihitung mulai Jan 2025):</p>
+                    <p class="text-xl font-bold text-gray-800 mb-2">${formatRupiah(debtInfo.total)}</p>
+                    <p class="mb-1">Rincian Bulan:</p>
+                    <ul class="list-disc pl-5 h-32 overflow-y-auto border p-2 bg-gray-50 text-xs">
+                        ${debtInfo.details.map(d => `<li>${d}</li>`).join('')}
+                    </ul>
+                    <p class="mt-2 text-xs text-gray-500">Total tunggakan akan disimpan permanen.</p>
+                </div>`;
+                icon = "warning";
+            }
+
+            Swal.fire({
+                title: 'Konfirmasi Alumni',
+                html: message,
+                icon: icon,
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Arsipkan',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: debtInfo.total > 0 ? '#d33' : '#3085d6'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    db.santri[idx].status = 'alumni';
+                    db.santri[idx].debt = debtInfo.total; // SIMPAN PERMANEN
+                    saveData();
+                    renderSantriTable();
+                    Swal.fire('Berhasil', 'Santri telah diarsipkan.', 'success');
+                }
+            });
+        }
+
+        // --- EXCEL & EDIT ---
+        function handleExcelUpload(input) {
+            const file = input.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const workbook = XLSX.read(e.target.result, {type: 'array'});
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                let count = 0;
+                json.forEach(row => {
+                    const keys = Object.keys(row);
+                    const nameKey = keys.find(k => k.toLowerCase().includes('nama'));
+                    const jkKey = keys.find(k => k.toLowerCase().match(/j.*k|l\/p/));
+                    const yearKey = keys.find(k => k.toLowerCase().includes('tahun') || k.toLowerCase().includes('angkatan'));
+                    if(nameKey && row[nameKey]) {
+                        db.santri.push({ id: 'S-' + Date.now() + Math.random(), name: row[nameKey], jk: jkKey ? row[jkKey] : 'L', year: yearKey ? row[yearKey] : new Date().getFullYear(), status: 'aktif', type: 'Wajib', debt: 0 });
+                        count++;
+                    }
+                });
+                saveData(); renderSantriTable(); Swal.fire('Import Berhasil', `${count} data ditambahkan`, 'success'); input.value = null;
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        function editSantri(id) {
+            const s = db.santri.find(x => x.id == id); if (!s) return;
+            document.getElementById('modal-santri').classList.remove('hidden');
+            document.getElementById('modal-santri-title').innerText = "Edit Santri";
+            document.getElementById('santri-id').value = s.id;
+            document.getElementById('santri-nama').value = s.name;
+            document.getElementById('santri-jk').value = s.jk;
+            document.getElementById('santri-tahun').value = s.year;
+            document.getElementById('santri-status-bayar').value = s.type;
+        }
+        function openModalSantri() {
+            document.getElementById('modal-santri').classList.remove('hidden');
+            document.getElementById('modal-santri-title').innerText = "Tambah Santri";
+            document.getElementById('santri-id').value = ""; document.getElementById('santri-nama').value = "";
+        }
+        function closeModalSantri() { document.getElementById('modal-santri').classList.add('hidden'); }
+        function saveSantri(e) {
+            e.preventDefault();
+            const id = document.getElementById('santri-id').value;
+            const data = { name: document.getElementById('santri-nama').value, jk: document.getElementById('santri-jk').value, year: document.getElementById('santri-tahun').value, type: document.getElementById('santri-status-bayar').value };
+            if(id) { const idx = db.santri.findIndex(x => x.id == id); db.santri[idx] = { ...db.santri[idx], ...data }; } 
+            else { db.santri.push({ id: 'S-'+Date.now(), ...data, status: 'aktif', debt: 0 }); }
+            saveData(); closeModalSantri(); renderSantriTable(); Swal.fire('Sukses', 'Data tersimpan', 'success');
+        }
+        function downloadKartuSPP(id) {
+            const s = db.santri.find(x => x.id == id);
+            const { jsPDF } = window.jspdf; const doc = new jsPDF(); const year = new Date().getFullYear();
+            doc.setFontSize(16); doc.text("KARTU SYAHRIAH SANTRI", 105, 15, null, null, "center");
+            doc.setFontSize(10); doc.text(`Nama: ${s.name}`, 14, 25); doc.text(`Tahun: ${year}`, 14, 30);
+            const rows = [];
+            for(let i=1; i<=12; i++) { const k = `${s.id}_${year}-${String(i).padStart(2,'0')}`; const p = db.payments[k]; const status = p ? (p.status === 'lunas' ? 'LUNAS' : `CICIL (${formatRupiah(p.paid)})`) : ''; rows.push([MONTH_NAMES[i-1], formatRupiah(db.config.nominal), status]); }
+            doc.autoTable({ startY: 35, head: [['Bulan', 'Tagihan', 'Status Pembayaran']], body: rows, theme: 'grid', headStyles: { fillColor: [22, 163, 74] } });
+            doc.save(`Kartu-SPP-${s.name}.pdf`);
+        }
+
+        // --- PEMBAYARAN ---
+        function populateMonthYearFilter() {
+            const mHtml = MONTH_NAMES.map((m,i) => `<option value="${String(i+1).padStart(2,'0')}">${m}</option>`).join('');
+            document.getElementById('pay-filter-month').innerHTML = mHtml; document.getElementById('report-month').innerHTML = mHtml; document.getElementById('hist-month').innerHTML = '<option value="">Semua</option>' + mHtml;
+            const y = new Date().getFullYear(); const yHtml = `<option value="${y-1}">${y-1}</option><option value="${y}" selected>${y}</option><option value="${y+1}">${y+1}</option>`;
+            document.getElementById('pay-filter-year').innerHTML = yHtml; document.getElementById('report-year').innerHTML = yHtml; document.getElementById('hist-year').innerHTML = `<option value="">Semua</option>` + yHtml;
+            document.getElementById('pay-filter-month').value = String(new Date().getMonth()+1).padStart(2,'0');
+        }
+
+        function renderPaymentTable() {
+            const tbody = document.getElementById('payment-table-body');
+            const search = document.getElementById('search-payment').value.toLowerCase();
+            const month = document.getElementById('pay-filter-month').value;
+            const year = document.getElementById('pay-filter-year').value;
+            const key = `${year}-${month}`;
+            let prevMonth = parseInt(month) - 1; let prevYear = parseInt(year); if(prevMonth === 0) { prevMonth = 12; prevYear -= 1; }
+            const prevDateObj = new Date(prevYear, prevMonth - 1, 1); const startSystemDate = new Date(2025, 0, 1);
+
+            tbody.innerHTML = db.santri.filter(s => s.status === 'aktif' && s.name.toLowerCase().includes(search)).map((s, i) => {
+                const payKey = `${s.id}_${key}`; const payment = db.payments[payKey] || { status: 'belum', paid: 0 };
+                let statusLalu = '<span class="text-green-500 text-xs"><i class="fas fa-check"></i> Aman</span>';
+                if (s.type === 'Wajib' && prevDateObj >= startSystemDate) { const prevKey = `${s.id}_${prevYear}-${String(prevMonth).padStart(2,'0')}`; const prevPay = db.payments[prevKey] || { status: 'belum' }; if (prevPay.status !== 'lunas') statusLalu = '<span class="text-red-500 font-bold text-xs"><i class="fas fa-exclamation-circle"></i> Nunggak</span>'; }
+                let badge = '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">BELUM</span>';
+                if(s.type === 'Bebas') badge = '<span class="text-gray-400 text-xs">Bebas</span>'; else if(payment.status === 'lunas') badge = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">LUNAS</span>'; else if(payment.status === 'cicil') badge = `<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs">CICIL ${formatRupiah(payment.paid)}</span>`;
+                return `<tr class="hover:bg-gray-50"><td class="px-4 py-3">${i+1}</td><td class="px-4 py-3 font-medium">${s.name}</td><td class="px-4 py-3">${statusLalu}</td><td class="px-4 py-3">${badge}</td><td class="px-4 py-3 text-center"><button onclick="openModalBayar('${s.id}', '${s.name}', '${key}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs shadow">Bayar</button></td></tr>`;
+            }).join('');
+        }
+
+        function openModalBayar(id, name, monthKey) {
+            document.getElementById('modal-bayar').classList.remove('hidden');
+            document.getElementById('bayar-santri-id').value = id;
+            document.getElementById('bayar-santri-nama').innerText = name;
+            document.getElementById('bayar-bulan-target').value = monthKey;
+            document.getElementById('bayar-tanggal').valueAsDate = new Date();
+            if(monthKey === 'HUTANG') { document.getElementById('bayar-tipe').value = 'tunggakan'; document.getElementById('bayar-nominal').value = ''; }
+            else { document.getElementById('bayar-tipe').value = 'bulanan'; document.getElementById('bayar-nominal').value = db.config.nominal; }
+        }
+        function closeModalBayar() { document.getElementById('modal-bayar').classList.add('hidden'); }
+        function autoFillNominal() { if(document.getElementById('bayar-tipe').value === 'bulanan') document.getElementById('bayar-nominal').value = db.config.nominal; else document.getElementById('bayar-nominal').value = ""; }
+
+        function processPayment(e) {
+            e.preventDefault();
+            const id = document.getElementById('bayar-santri-id').value;
+            const monthKey = document.getElementById('bayar-bulan-target').value;
+            const amount = parseInt(document.getElementById('bayar-nominal').value);
+            const date = document.getElementById('bayar-tanggal').value;
+            const type = document.getElementById('bayar-tipe').value;
+            const trxId = 'TRX-' + Date.now();
+            const desc = type === 'bulanan' ? `Syahriah ${monthKey}` : `Bayar Hutang/Tunggakan`;
+            db.transaksi.push({ id: trxId, date, santriId: id, amount, type, via: document.getElementById('bayar-via').value, officer: 'admin', desc });
+            if(type === 'bulanan') {
+                const payKey = `${id}_${monthKey}`;
+                const current = db.payments[payKey] ? db.payments[payKey].paid : 0;
+                const total = current + amount;
+                db.payments[payKey] = { status: total >= parseInt(db.config.nominal) ? 'lunas' : 'cicil', paid: total };
+            } else {
+                // UPDATE LOGIKA BAYAR HUTANG ALUMNI
+                const idx = db.santri.findIndex(x => x.id == id);
+                if(idx >= 0 && db.santri[idx].debt > 0) {
+                    db.santri[idx].debt = Math.max(0, db.santri[idx].debt - amount);
+                }
+            }
+            saveData(); closeModalBayar(); renderPaymentTable(); renderSantriTable(); loadDashboard(); renderHistory();
+            Swal.fire({ title: 'Berhasil!', text: 'Pembayaran tersimpan.', icon: 'success', showCancelButton: true, confirmButtonText: 'Lihat Nota', cancelButtonText: 'Tutup' }).then((r) => { if(r.isConfirmed) viewNota(trxId); });
+        }
+
+        // --- RIWAYAT & LAPORAN ---
+        function populateHistoryFilters() {}
+        function renderHistory() {
+            const fYear = document.getElementById('hist-year').value;
+            const fMonth = document.getElementById('hist-month').value;
+            const fDate = document.getElementById('hist-date').value;
+            const filtered = db.transaksi.filter(t => {
+                if(fDate) return t.date === fDate;
+                let pass = true;
+                if(fYear && !t.date.startsWith(fYear)) pass = false;
+                if(fMonth && t.date.split('-')[1] !== fMonth) pass = false;
+                return pass;
+            });
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = filtered.slice().reverse().map(t => {
+                const s = db.santri.find(x => x.id == t.santriId);
+                return `<tr class="hover:bg-gray-50 border-b"><td class="px-4 py-2">${t.date}</td><td class="px-4 py-2 font-bold">${s?s.name:'-'}</td><td class="px-4 py-2">${formatRupiah(t.amount)}</td><td class="px-4 py-2 text-xs">${t.desc}</td><td class="px-4 py-2">${t.via}</td><td class="px-4 py-2"><button onclick="viewNota('${t.id}')" class="text-blue-600 hover:underline text-xs">Lihat</button></td></tr>`;
+            }).join('');
+        }
+        function resetHistoryFilter() { document.getElementById('hist-year').value = ""; document.getElementById('hist-month').value = ""; document.getElementById('hist-date').value = ""; renderHistory(); }
+        function viewNota(trxId) {
+            const t = db.transaksi.find(x => x.id === trxId); if(!t) return;
+            const s = db.santri.find(x => x.id === t.santriId);
+            document.getElementById('nota-tgl').innerText = t.date;
+            document.getElementById('nota-id').innerText = t.id;
+            document.getElementById('nota-nama').innerText = s ? s.name : '-';
+            document.getElementById('nota-nominal').innerText = formatRupiah(t.amount);
+            document.getElementById('nota-desc').innerText = t.desc;
+            document.getElementById('nota-admin').innerText = "Admin: " + t.officer;
+            const el = document.getElementById('nota-print');
+            html2canvas(el).then(canvas => { Swal.fire({ title: 'Nota Pembayaran', imageUrl: canvas.toDataURL(), imageWidth: 400, showDenyButton: true, confirmButtonText: 'Download', denyButtonText: 'Tutup' }).then((r) => { if(r.isConfirmed) { const link = document.createElement('a'); link.download = `Nota-${t.id}.png`; link.href = canvas.toDataURL(); link.click(); } }); });
+        }
+        function populateReportFilter() { renderMatrix(); }
+        function renderMatrix() {
+            const year = document.getElementById('report-year').value || new Date().getFullYear();
+            document.getElementById('matrix-year-label').innerText = year;
+            const tbody = document.getElementById('matrix-body');
+            tbody.innerHTML = db.santri.filter(s => s.status === 'aktif' && s.type === 'Wajib').map(s => {
+                let row = `<tr><td class="border p-2 text-left font-medium text-gray-700">${s.name}</td>`;
+                for(let i=1; i<=12; i++) { const k = `${s.id}_${year}-${String(i).padStart(2,'0')}`; const p = db.payments[k]; let c = 'bg-red-200'; if(p) { if(p.status === 'lunas') c = 'bg-green-200'; else if(p.status === 'cicil') c = 'bg-yellow-200'; } row += `<td class="border p-1 ${c}"></td>`; }
+                return row + '</tr>';
+            }).join('');
+        }
+        document.getElementById('report-year').addEventListener('change', renderMatrix);
+        function downloadMonthlyReport() {
+            const { jsPDF } = window.jspdf; const doc = new jsPDF(); const m = document.getElementById('report-month').value; const y = document.getElementById('report-year').value; const filterKey = `${y}-${m}`;
+            let totalMasuk = 0; let subSyahriah = 0; let subTunggakan = 0;
+            db.transaksi.forEach(t => { if(t.date.startsWith(filterKey)) { totalMasuk += parseInt(t.amount); if(t.type === 'bulanan') subSyahriah += parseInt(t.amount); else subTunggakan += parseInt(t.amount); } });
+            const activeSantri = db.santri.filter(s => s.status === 'aktif' && s.type === 'Wajib'); let countLunas = 0; let countBelum = 0;
+            activeSantri.forEach(s => { const payKey = `${s.id}_${filterKey}`; const p = db.payments[payKey]; if(p && p.status === 'lunas') countLunas++; else countBelum++; });
+            doc.setFontSize(16); doc.text(`LAPORAN KEUANGAN BULAN ${MONTH_NAMES[parseInt(m)-1].toUpperCase()} ${y}`, 105, 15, null, null, "center");
+            doc.autoTable({ startY: 30, head: [['RINGKASAN PEMASUKAN', 'NOMINAL']], body: [['Pembayaran Syahriah', formatRupiah(subSyahriah)],['Pembayaran Tunggakan', formatRupiah(subTunggakan)],['TOTAL', formatRupiah(totalMasuk)]], theme: 'grid', headStyles: { fillColor: [22, 163, 74] } });
+            doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['STATISTIK', 'JUMLAH']], body: [['Total Santri', activeSantri.length],['Lunas', countLunas],['Belum', countBelum]], theme: 'grid', headStyles: { fillColor: [59, 130, 246] } });
+            const detailData = db.transaksi.filter(t => t.date.startsWith(filterKey)).map((t, i) => { const s = db.santri.find(x => x.id == t.santriId); return [i+1, t.date, s?s.name:'-', t.desc, formatRupiah(t.amount)]; });
+            doc.text("Rincian Transaksi:", 14, doc.lastAutoTable.finalY + 10); doc.autoTable({ startY: doc.lastAutoTable.finalY + 15, head: [['No', 'Tgl', 'Nama', 'Keterangan', 'Nominal']], body: detailData, theme: 'striped' });
+            doc.save(`Laporan-${m}-${y}.pdf`);
+        }
+        function downloadYearlyReport() {
+            const { jsPDF } = window.jspdf; const doc = new jsPDF(); const y = document.getElementById('report-year').value;
+            doc.text(`LAPORAN KEUANGAN TAHUN ${y}`, 14, 15);
+            const summary = MONTH_NAMES.map((nm, i) => { const key = `${y}-${String(i+1).padStart(2,'0')}`; const total = db.transaksi.filter(t => t.date.startsWith(key)).reduce((a,b) => a+parseInt(b.amount), 0); return [nm, formatRupiah(total)]; });
+            doc.autoTable({ startY: 25, head: [['Bulan', 'Total Masuk']], body: summary }); doc.save(`Laporan-Tahunan-${y}.pdf`);
+        }
+        function saveConfig() { db.config.nominal = document.getElementById('set-nominal').value; db.config.deadline = document.getElementById('set-deadline').value; db.config.logo = document.getElementById('set-logo').value; db.auth.user = document.getElementById('set-user').value; db.auth.pass = document.getElementById('set-pass').value; db.auth.resetCode = document.getElementById('set-resetcode').value; saveData(); applyConfig(); Swal.fire('Tersimpan', '', 'success'); }
+        function backupData() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db)); const a = document.createElement('a'); a.href = dataStr; a.download = "BACKUP.json"; a.click(); }
+        function restoreData(input) { const f = input.files[0]; if(f) { const r = new FileReader(); r.onload = (e) => { try { db = JSON.parse(e.target.result); saveData(); location.reload(); } catch(x) { Swal.fire('Error', 'File rusak', 'error'); } }; r.readAsText(f); } }
+    </script>
+</body>
+</html>
